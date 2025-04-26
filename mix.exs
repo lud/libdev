@@ -50,7 +50,6 @@ defmodule Libdev.MixProject do
     ]
   end
 
-
   def cli do
     [
       preferred_envs: [dialyzer: :test]
