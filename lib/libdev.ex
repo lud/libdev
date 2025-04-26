@@ -1,18 +1,8 @@
 defmodule Libdev do
   @moduledoc """
-  Documentation for `Libdev`.
+  This is a meta-package for Elixir library authors to simplify the management of
+  development libraries when working on multiple projects.
+
+  It does not contain any production code.
   """
-
-  @doc """
-  Hello world.
-
-  ## Examples
-
-      iex> Libdev.hello()
-      :world
-
-  """
-  def hello do
-    :world
-  end
 end
