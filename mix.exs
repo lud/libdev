@@ -8,7 +8,7 @@ defmodule Libdev.MixProject do
     [
       app: :libdev,
       version: @version,
-      elixir: "~> 1.18",
+      elixir: "~> 1.17",
       start_permanent: Mix.env() == :prod,
       source_url: @source_url,
       elixirc_paths: elixirc_paths(Mix.env()),
