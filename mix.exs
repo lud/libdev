@@ -42,7 +42,7 @@ defmodule Libdev.MixProject do
 
   defp auto_updated_deps do
     [
-      {:credo, "~> 1.7", runtime: false},
+      {:credo, ">= 1.7.12", runtime: false},
       {:dialyxir, ">= 1.4.5", runtime: false},
       {:doctor, ">= 0.22.0", runtime: false},
       {:ex_check, ">= 0.16.0", runtime: false},
@@ -74,11 +74,6 @@ defmodule Libdev.MixProject do
   end
 
   defp package do
-    [
-      licenses: ["MIT"],
-      links: %{
-        "Github" => @source_url
-      }
-    ]
+    [licenses: ["MIT"], links: %{"Github" => @source_url}]
   end
 end
