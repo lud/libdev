@@ -22,38 +22,40 @@ defmodule Libdev.MixProject do
     []
   end
 
-  defp elixirc_paths(:dev), do: ["lib", "dev"]
-  defp elixirc_paths(_), do: ["lib"]
+  defp elixirc_paths(:dev) do
+    ["lib", "dev"]
+  end
+
+  defp elixirc_paths(_) do
+    ["lib"]
+  end
 
   defp docs do
-    [
-      main: "readme",
-      source_ref: "v#{@version}",
-      source_url: @source_url,
-      extras: ["README.md"]
-    ]
+    [main: "readme", source_ref: "v#{@version}", source_url: @source_url, extras: ["README.md"]]
   end
 
   defp deps do
-    [
-      # Users dependencies
-      {:credo, "~> 1.7", runtime: false},
-      {:dialyxir, "~> 1.4", runtime: false},
-      {:doctor, "~> 0.22", runtime: false},
-      {:ex_check, "~> 0.16", runtime: false},
-      {:ex_doc, "~> 0.37", runtime: false},
-      {:mix_audit, "~> 2.1", runtime: false},
-      {:sobelow, "~> 0.13", runtime: false},
+    auto_updated_deps() ++ self_deps()
+  end
 
-      # Libdev's dependencies
-      {:readmix, "~> 0.4.0", only: [:dev, :test], runtime: false}
+  defp auto_updated_deps do
+    [
+      {:credo, ">= 1.7.12", runtime: false},
+      {:dialyxir, ">= 1.4.5", runtime: false},
+      {:doctor, ">= 0.22.0", runtime: false},
+      {:ex_check, ">= 0.16.0", runtime: false},
+      {:ex_doc, ">= 0.38.2", runtime: false},
+      {:mix_audit, ">= 2.1.4", runtime: false},
+      {:sobelow, ">= 0.14.0", runtime: false}
     ]
   end
 
+  defp self_deps do
+    [{:readmix, "~> 0.4.0", only: [:dev, :test], runtime: false}]
+  end
+
   def cli do
-    [
-      preferred_envs: [dialyzer: :test]
-    ]
+    [preferred_envs: [dialyzer: :test]]
   end
 
   defp dialyzer do
