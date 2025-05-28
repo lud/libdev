@@ -1,13 +1,9 @@
 name: Publish hex.pm Package
 
 on:
-  pull_request:
+  push:
     branches:
       - main
-
-concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
-  cancel-in-progress: true
 
 env:
   MIX_ENV: dev
@@ -24,8 +20,8 @@ jobs:
       contents: write
       pull-requests: write
 
-    # Only trigger this workflow if the PR comes from dependabot
-    if: github.event.pull_request.user.login == 'dependabot[bot]' && github.repository == 'lud/libdev'
+    # Only trigger this workflow if the PR comes from dependabot and was merged
+    if: github.event.pull_request.merged && github.event.pull_request.user.login == 'dependabot[bot]'
 
     steps:
       - uses: actions/checkout@v4
