@@ -1,9 +1,6 @@
 name: Publish hex.pm Package
 
 on:
-  push:
-    branches:
-      - main
   pull_request:
     branches:
       - main
@@ -28,7 +25,7 @@ jobs:
       pull-requests: write
 
     # Only trigger this workflow if the PR comes from dependabot
-    # if: github.event.pull_request.user.login == 'dependabot[bot]' && github.repository == 'lud/libdev'
+    if: github.event.pull_request.user.login == 'dependabot[bot]' && github.repository == 'lud/libdev'
 
     steps:
       - uses: actions/checkout@v4
