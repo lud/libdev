@@ -1,5 +1,4 @@
 [
-  dependencies: [
-    allow_prod_env: [:dialyxir, :credo, :ex_doc, :ex_check, :mix_audit]
-  ]
+  # We need to opt-out of elixir checks but keep dependencies submissions
+  # github_workflows: false
 ]

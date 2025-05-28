@@ -46,13 +46,37 @@ defmodule Mix.Tasks.Update.Deps.Vsns do
   end
 
   defp update_vsns(quoted_deps, min_versions) do
-    Enum.map(quoted_deps, fn {:{}, meta, [dep, _vsn | tuple_vars]} ->
-      {:{}, meta, [dep, new_vsn(dep, min_versions) | tuple_vars]}
+    Enum.map(quoted_deps, fn {:{}, meta, [dep, cur_req | tuple_vars]} ->
+      new_req =
+        case new_req(dep, min_versions) do
+          ^cur_req ->
+            cur_req
+
+          new_req ->
+            print_update(dep, cur_req, new_req)
+            new_req
+        end
+
+      {:{}, meta, [dep, new_req | tuple_vars]}
     end)
   end
 
-  defp new_vsn(dep, min_versions) do
+  defp new_req(dep, min_versions) do
     latest_vsn = Map.fetch!(min_versions, dep)
     ">= #{latest_vsn}"
   end
+
+  defp print_update(dep, cur_req, new_req) do
+    IO.puts([
+      "Updated requirement for ",
+      inspect(dep),
+      " ",
+      format_req(cur_req),
+      " to ",
+      format_req(new_req)
+    ])
+  end
+
+  defp format_req(">= " <> req), do: format_req(req)
+  defp format_req(req), do: [?', req, ?']
 end

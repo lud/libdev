@@ -7,6 +7,7 @@ defmodule Libdev.MixProject do
   def project do
     [
       app: :libdev,
+      description: "A meta package to pull common development libraries.",
       version: @version,
       elixir: "~> 1.17",
       start_permanent: Mix.env() == :prod,
@@ -14,7 +15,8 @@ defmodule Libdev.MixProject do
       elixirc_paths: elixirc_paths(Mix.env()),
       docs: docs(),
       deps: deps(),
-      dialyzer: dialyzer()
+      dialyzer: dialyzer(),
+      package: package()
     ]
   end
 
@@ -40,7 +42,7 @@ defmodule Libdev.MixProject do
 
   defp auto_updated_deps do
     [
-      {:credo, ">= 1.7.12", runtime: false},
+      {:credo, "~> 1.7", runtime: false},
       {:dialyxir, ">= 1.4.5", runtime: false},
       {:doctor, ">= 0.22.0", runtime: false},
       {:ex_check, ">= 0.16.0", runtime: false},
@@ -51,7 +53,10 @@ defmodule Libdev.MixProject do
   end
 
   defp self_deps do
-    [{:readmix, "~> 0.4.0", only: [:dev, :test], runtime: false}]
+    [
+      {:readmix, "~> 0.4.0", only: [:dev, :test], runtime: false},
+      {:mix_version, "~> 2.4", only: [:dev, :test], runtime: false}
+    ]
   end
 
   def cli do
@@ -65,6 +70,15 @@ defmodule Libdev.MixProject do
       plt_add_deps: :app_tree,
       plt_add_apps: [:ex_unit, :mix],
       plt_local_path: "_build/plts"
+    ]
+  end
+
+  defp package do
+    [
+      licenses: ["MIT"],
+      links: %{
+        "Github" => @source_url
+      }
     ]
   end
 end

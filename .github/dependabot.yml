@@ -4,8 +4,8 @@ updates:
   - package-ecosystem: mix
     directory: /
     schedule:
-      interval: daily
-      timezone: Europe/Paris
+      interval: weekly
+      timezone: Etc/UTC
       time: "06:00"
     commit-message:
       prefix: "chore(deps)"
@@ -19,8 +19,8 @@ updates:
   - package-ecosystem: "github-actions"
     directory: /
     schedule:
-      interval: daily
-      timezone: Europe/Paris
+      interval: weekly
+      timezone: Etc/UTC
       time: "06:00"
     commit-message:
       prefix: "chore(deps)"

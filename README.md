@@ -6,6 +6,7 @@ development libraries when working on multiple projects.
 This package includes the following packages:
 
 <!-- rdmx libdev:readme_deps -->
+
 * [credo](https://hex.pm/packages/credo)
 * [dialyxir](https://hex.pm/packages/dialyxir)
 * [doctor](https://hex.pm/packages/doctor)
@@ -18,7 +19,8 @@ This package includes the following packages:
 
 ## Installation
 
-To pull all the included packages, install the dependency as usual.
+To pull all the included packages, install the dependency for `:dev` and `:test`
+environments:
 
 ```elixir
 def deps do
@@ -27,3 +29,11 @@ def deps do
   ]
 end
 ```
+
+## Dependabot
+
+This meta package relies on dependabot updates and is published to [Hex](https://hex.pm/) on a weekly basis when its dependencies are updated.
+
+You should also setup
+[Dependabot](https://docs.github.com/en/code-security/getting-started/dependabot-quickstart-guide)
+for your repository in order to get updates from libdev.
