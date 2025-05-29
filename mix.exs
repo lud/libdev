@@ -54,7 +54,7 @@ defmodule Libdev.MixProject do
 
   defp self_deps do
     [
-      {:readmix, "~> 0.4.0", only: [:dev, :test], runtime: false},
+      {:readmix, "~> 0.4", only: [:dev, :test], runtime: false},
       {:mix_version, "~> 2.4", only: [:dev, :test], runtime: false}
     ]
   end
