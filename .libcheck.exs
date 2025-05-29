@@ -1,5 +1,8 @@
 [
-  github_dependencies: true,
+  github_workflows: [
+    elixir_checks: false,
+    dependencies: true,
+  ],
   dependencies: [
     allow_prod_env: [
       :credo,
@@ -10,5 +13,9 @@
       :mix_audit,
       :sobelow
     ]
+  ],
+  dependabot: [
+    schedule: "weekly",
+    timezone: "Etc/UTC"
   ]
 ]
