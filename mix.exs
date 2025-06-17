@@ -40,14 +40,14 @@ defmodule Libdev.MixProject do
     auto_updated_deps() ++ self_deps()
   end
 
-  defp auto_updated_deps do
+  def auto_updated_deps do
     [
       {:credo, ">= 1.7.12", runtime: false},
       {:dialyxir, ">= 1.4.5", runtime: false},
       {:doctor, ">= 0.22.0", runtime: false},
       {:ex_check, ">= 0.16.0", runtime: false},
       {:ex_doc, ">= 0.38.2", runtime: false},
-      {:mix_audit, ">= 2.1.4", runtime: false},
+      {:mix_audit, ">= 2.1.5", runtime: false},
       {:sobelow, ">= 0.14.0", runtime: false}
     ]
   end

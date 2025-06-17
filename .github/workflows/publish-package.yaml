@@ -20,9 +20,6 @@ jobs:
       contents: write
       pull-requests: write
 
-    # Only trigger this workflow if the PR comes from dependabot and was merged
-    if: github.event.pull_request.merged && github.event.pull_request.user.login == 'dependabot[bot]'
-
     steps:
       - uses: actions/checkout@v4
 
@@ -62,12 +59,20 @@ jobs:
           mix update.deps.vsns
           mix deps.get --check-locked
 
+      - name: Check versions are updated
+        uses: tj-actions/verify-changed-files@a1c6acee9df209257a246f2cc6ae8cb6581c1edf # v20
+        id: verify_changed_manifest
+        with:
+          files: |
+            .manifest
+
       # Now we want to create a new package version, but only if the mix.exs
       # were updated. Mix version will not tell us if something was changed, and
       # we do not want to parse the output. So we will create a new commit using
       # another action, and only if that commit is created we will run mix
       # version.
       - name: Create commit
+        if: contains(steps.verify_changed_manifest.outputs.changed_files, 'test_directory')
         uses: EndBug/add-and-commit@v9
         id: commit_min_versions
         with:
@@ -93,6 +98,7 @@ jobs:
           mix version -p
 
       - name: Push changes
+        if: ${{ steps.commit_min_versions.outputs.committed }}
         uses: ad-m/github-push-action@master
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
@@ -100,11 +106,11 @@ jobs:
           tags: true
 
       - name: Publish to Hex.pm
+        if: ${{ steps.commit_min_versions.outputs.committed }}
         env:
           HEX_API_KEY: ${{ secrets.HEX_API_KEY }}
         run: |
           mix hex.publish --yes
-
 
         # Prevent app code to be cached
       - name: Clean

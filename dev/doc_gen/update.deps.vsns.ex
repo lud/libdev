@@ -4,7 +4,11 @@ defmodule Mix.Tasks.Update.Deps.Vsns do
 
   @impl true
   def run(_argv) do
-    versions = min_versions()
+    deps_declarations = Mix.Project.get!().auto_updated_deps()
+    deps = Enum.map(deps_declarations, fn {dep, _vsn, _} -> dep end)
+    deps |> dbg()
+
+    versions = min_versions(deps)
 
     {ast, comments} =
       "mix.exs"
@@ -20,17 +24,26 @@ defmodule Mix.Tasks.Update.Deps.Vsns do
       |> Code.format_string!()
 
     File.write!("mix.exs", new_source)
+    File.write!(".manifest", manifest(versions))
     Mix.Task.run("format")
   end
 
-  defp min_versions do
+  defp min_versions(managed_deps) do
     "mix.lock"
     |> File.read!()
     |> Code.format_string!()
     |> IO.iodata_to_binary()
     |> Code.eval_string()
     |> case(do: ({deps, _} -> deps))
-    |> Map.new(fn {dep, {:hex, dep, vsn, _hash, _, _, _, _}} -> {dep, vsn} end)
+    |> Enum.flat_map(fn
+      {dep, {:hex, dep, vsn, _hash, _, _, _, _}} ->
+        if dep in managed_deps do
+          [{dep, vsn}]
+        else
+          []
+        end
+    end)
+    |> Map.new()
   end
 
   defp replace_deps(mix_exs_ast, min_versions) do
@@ -79,4 +92,11 @@ defmodule Mix.Tasks.Update.Deps.Vsns do
 
   defp format_req(">= " <> req), do: format_req(req)
   defp format_req(req), do: [?', req, ?']
+
+  defp manifest(versions) do
+    versions
+    |> Enum.sort_by(fn {dep, _vsn} -> dep end)
+    |> inspect(pretty: true)
+    |> tap(&IO.puts/1)
+  end
 end

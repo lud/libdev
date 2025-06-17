@@ -1,7 +1,7 @@
 [
   github_workflows: [
     elixir_checks: false,
-    dependencies: true,
+    dependencies: true
   ],
   dependencies: [
     allow_prod_env: [
