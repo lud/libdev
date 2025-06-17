@@ -72,7 +72,7 @@ jobs:
       # another action, and only if that commit is created we will run mix
       # version.
       - name: Create commit
-        if: contains(steps.verify_changed_manifest.outputs.changed_files, 'test_directory')
+        if: contains(steps.verify_changed_manifest.outputs.changed_files, '.manifest')
         uses: EndBug/add-and-commit@v9
         id: commit_min_versions
         with:
