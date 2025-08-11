@@ -1,6 +1,6 @@
 [
   credo: "1.7.12",
-  dialyxir: "1.4.5",
+  dialyxir: "1.4.6",
   doctor: "0.22.0",
   ex_check: "0.16.0",
   ex_doc: "0.38.2",
