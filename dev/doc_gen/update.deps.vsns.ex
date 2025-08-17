@@ -6,7 +6,6 @@ defmodule Mix.Tasks.Update.Deps.Vsns do
   def run(_argv) do
     deps_declarations = Mix.Project.get!().auto_updated_deps()
     deps = Enum.map(deps_declarations, fn {dep, _vsn, _} -> dep end)
-    deps |> dbg()
 
     versions = min_versions(deps)
 
@@ -25,7 +24,7 @@ defmodule Mix.Tasks.Update.Deps.Vsns do
 
     File.write!("mix.exs", new_source)
     File.write!(".manifest", manifest(versions))
-    Mix.Task.run("format")
+    Mix.Task.run("format", ~w(--migrate))
   end
 
   defp min_versions(managed_deps) do
@@ -47,15 +46,24 @@ defmodule Mix.Tasks.Update.Deps.Vsns do
   end
 
   defp replace_deps(mix_exs_ast, min_versions) do
-    Macro.postwalk(mix_exs_ast, fn
-      {:defp, meta1, [{:auto_updated_deps, meta2, _no_args}, [do: body]]} ->
-        body = update_vsns(body, min_versions)
-        # force args to be nil to remote the parenthesis
-        {:defp, meta1, [{:auto_updated_deps, meta2, nil}, [do: body]]}
+    {new_ast, found?} =
+      Macro.postwalk(mix_exs_ast, _found? = false, fn
+        {def_p, meta1, [{:auto_updated_deps, meta2, _no_args}, [do: body]]}, false = _found?
+        when def_p in [:def, :defp] ->
+          body = update_vsns(body, min_versions)
+          # force args to be nil to remove the parenthesis
+          fun_ast = {def_p, meta1, [{:auto_updated_deps, meta2, nil}, [do: body]]}
+          {fun_ast, _found? = true}
 
-      other ->
-        other
-    end)
+        other, acc ->
+          {other, acc}
+      end)
+
+    if not found? do
+      raise "AST clause was not found"
+    end
+
+    new_ast
   end
 
   defp update_vsns(quoted_deps, min_versions) do
