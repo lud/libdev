@@ -46,7 +46,7 @@ defmodule Libdev.MixProject do
       {:dialyxir, ">= 1.4.6", runtime: false},
       {:doctor, ">= 0.22.0", runtime: false},
       {:ex_check, ">= 0.16.0", runtime: false},
-      {:ex_doc, ">= 0.38.2", runtime: false},
+      {:ex_doc, ">= 0.38.3", runtime: false},
       {:mix_audit, ">= 2.1.5", runtime: false},
       {:sobelow, ">= 0.14.0", runtime: false}
     ]
