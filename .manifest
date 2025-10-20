@@ -1,9 +1,9 @@
 [
-  credo: "1.7.12",
+  credo: "1.7.13",
   dialyxir: "1.4.6",
   doctor: "0.22.0",
   ex_check: "0.16.0",
   ex_doc: "0.38.4",
   mix_audit: "2.1.5",
-  sobelow: "0.14.0"
+  sobelow: "0.14.1"
 ]
