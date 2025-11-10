@@ -43,7 +43,7 @@ defmodule Libdev.MixProject do
   def auto_updated_deps do
     [
       {:credo, ">= 1.7.13", runtime: false},
-      {:dialyxir, ">= 1.4.6", runtime: false},
+      {:dialyxir, ">= 1.4.7", runtime: false},
       {:doctor, ">= 0.22.0", runtime: false},
       {:ex_check, ">= 0.16.0", runtime: false},
       {:ex_doc, ">= 0.39.1", runtime: false},
