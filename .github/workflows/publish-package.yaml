@@ -73,7 +73,7 @@ jobs:
       # version.
       - name: Create commit
         if: contains(steps.verify_changed_manifest.outputs.changed_files, '.manifest')
-        uses: EndBug/add-and-commit@v9
+        uses: EndBug/add-and-commit@v10
         id: commit_min_versions
         with:
           add: .
