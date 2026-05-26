@@ -76,6 +76,7 @@ commit_parsers = [
   { message = "^\\(.*\\)$", skip = true },
   { message = "^chore\\(release\\): prepare for", skip = true },
   { message = "^chore\\(deps.*\\)", skip = true },
+  { message = "^deps:", skip = false, group = "<!-- 7 -->📦 Dependencies" },
   { message = "^chore\\(pr\\)", skip = true },
   { message = "^chore\\(pull\\)", skip = true },
   { message = "^chore\\(libcheck\\)", skip = true },

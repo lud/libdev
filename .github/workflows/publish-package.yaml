@@ -66,6 +66,16 @@ jobs:
           files: |
             .manifest
 
+      - name: Read commit message
+        if: contains(steps.verify_changed_manifest.outputs.changed_files, '.manifest')
+        id: read_commit_msg
+        run: |
+          {
+            echo "message<<EOF"
+            cat .commitmsg
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+
       # Now we want to create a new package version, but only if the mix.exs
       # were updated. Mix version will not tell us if something was changed, and
       # we do not want to parse the output. So we will create a new commit using
@@ -79,7 +89,7 @@ jobs:
           add: .
           author_name: lud
           author_email: "ludovic@demblans.com"
-          message: "Updated mix.exs minimal versions"
+          message: ${{ steps.read_commit_msg.outputs.message }}
           pathspec_error_handling: exitImmediately
           push: false
 

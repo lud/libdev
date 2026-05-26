@@ -14,16 +14,20 @@ defmodule Mix.Tasks.Update.Deps.Vsns do
       |> File.read!()
       |> Code.string_to_quoted_with_comments!(token_metadata: true, unescape: false)
 
+    {new_ast, updates} = replace_deps(ast, versions)
+
     new_source =
-      ast
-      |> replace_deps(versions)
+      new_ast
       |> Code.quoted_to_algebra(comments: comments)
       |> Inspect.Algebra.format(:infinity)
       |> IO.iodata_to_binary()
       |> Code.format_string!()
 
+    commit_msg = commit_msg(updates)
+
     File.write!("mix.exs", new_source)
     File.write!(".manifest", manifest(versions))
+    File.write!(".commitmsg", commit_msg)
     Mix.Task.run("format", ~w(--migrate))
   end
 
@@ -48,39 +52,41 @@ defmodule Mix.Tasks.Update.Deps.Vsns do
   end
 
   defp replace_deps(mix_exs_ast, min_versions) do
-    {new_ast, found?} =
-      Macro.postwalk(mix_exs_ast, _found? = false, fn
-        {def_p, meta1, [{:auto_updated_deps, meta2, _no_args}, [do: body]]}, false = _found?
+    {new_ast, {found?, updates}} =
+      Macro.postwalk(mix_exs_ast, {_found? = false, []}, fn
+        {def_p, meta1, [{:auto_updated_deps, meta2, _no_args}, [do: body]]},
+        {false = _found?, updates}
         when def_p in [:def, :defp] ->
-          body = update_vsns(body, min_versions)
+          {body, updates} = update_vsns(body, min_versions, updates)
           # force args to be nil to remove the parenthesis
           fun_ast = {def_p, meta1, [{:auto_updated_deps, meta2, nil}, [do: body]]}
-          {fun_ast, _found? = true}
+          {fun_ast, {_found? = true, updates}}
 
-        other, found? ->
-          {other, found?}
+        other, acc ->
+          {other, acc}
       end)
 
     if not found? do
       raise "AST clause was not found"
     end
 
-    new_ast
+    {new_ast, updates}
   end
 
-  defp update_vsns(quoted_deps, min_versions) do
-    Enum.map(quoted_deps, fn {:{}, meta, [dep, cur_req | tuple_vars]} ->
-      new_req =
+  defp update_vsns(quoted_deps, min_versions, updates) do
+    Enum.map_reduce(quoted_deps, updates, fn {:{}, meta, [dep, cur_req | tuple_vars]}, acc ->
+      {new_req, acc} =
         case new_req(dep, min_versions) do
           ^cur_req ->
-            cur_req
+            {cur_req, acc}
 
           new_req ->
             print_update(dep, cur_req, new_req)
-            new_req
+            {new_req, [{dep, cur_req, new_req} | acc]}
         end
 
-      {:{}, meta, [dep, new_req | tuple_vars]}
+      ast = {:{}, meta, [dep, new_req | tuple_vars]}
+      {ast, acc}
     end)
   end
 
@@ -113,5 +119,20 @@ defmodule Mix.Tasks.Update.Deps.Vsns do
     |> Enum.sort_by(fn {dep, _vsn} -> dep end)
     |> inspect(pretty: true)
     |> tap(&IO.puts/1)
+  end
+
+  defp commit_msg(updates) do
+    heading =
+      case updates do
+        [_single] -> "deps: Updated dependency "
+        _ -> "deps: Updated dependencies "
+      end
+
+    deps =
+      Enum.map_intersperse(updates, ", ", fn {dep, _, ">= " <> new_req} ->
+        [Atom.to_string(dep), " ", new_req]
+      end)
+
+    [heading, deps, ?\n]
   end
 end
