@@ -96,6 +96,7 @@ jobs:
       # This is only needed for mix version since the create commit workflow
       # takes those values directly
       - name: Configure Git
+        if: ${{ steps.commit_min_versions.outputs.committed }}
         run: |
           git config --local user.email "ludovic@demblans.com"
           git config --local user.name lud
