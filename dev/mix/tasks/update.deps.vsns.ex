@@ -33,7 +33,9 @@ defmodule Mix.Tasks.Update.Deps.Vsns do
     |> Code.format_string!()
     |> IO.iodata_to_binary()
     |> Code.eval_string()
-    |> case(do: ({deps, _} -> deps))
+    |> case do
+      ({deps, _} -> deps)
+    end
     |> Enum.flat_map(fn
       {dep, {:hex, dep, vsn, _hash, _, _, _, _}} ->
         if dep in managed_deps do
@@ -55,8 +57,8 @@ defmodule Mix.Tasks.Update.Deps.Vsns do
           fun_ast = {def_p, meta1, [{:auto_updated_deps, meta2, nil}, [do: body]]}
           {fun_ast, _found? = true}
 
-        other, acc ->
-          {other, acc}
+        other, found? ->
+          {other, found?}
       end)
 
     if not found? do
@@ -98,8 +100,13 @@ defmodule Mix.Tasks.Update.Deps.Vsns do
     ])
   end
 
-  defp format_req(">= " <> req), do: format_req(req)
-  defp format_req(req), do: [?', req, ?']
+  defp format_req(">= " <> req) do
+    format_req(req)
+  end
+
+  defp format_req(req) do
+    [?', req, ?']
+  end
 
   defp manifest(versions) do
     versions

@@ -16,7 +16,8 @@ defmodule Libdev.MixProject do
       docs: docs(),
       deps: deps(),
       dialyzer: dialyzer(),
-      package: package()
+      package: package(),
+      modkit: modkit()
     ]
   end
 
@@ -75,5 +76,16 @@ defmodule Libdev.MixProject do
 
   defp package do
     [licenses: ["MIT"], links: %{"Github" => @source_url}]
+  end
+
+  defp modkit do
+    [
+      mount: [
+        {Libdev, "lib/libdev"},
+        {Libdev.DocGen, "dev/doc_gen"},
+        {Mix.Tasks, "lib/mix/tasks", flavor: :mix_task},
+        {Mix.Tasks.Update.Deps.Vsns, "dev/mix/tasks/update.deps.vsns", flavor: :mix_task}
+      ]
+    ]
   end
 end
