@@ -66,6 +66,13 @@ protect_breaking_commits = false
 # Assigns commits to groups.
 # Optionally sets the commit's scope and can decide to exclude commits from further processing.
 commit_parsers = [
+  
+  # Custom libcheck commit parsers
+  
+  {group = "<!-- 7 -->📦 Dependencies", message = "^deps:", skip = false},
+  
+  # Shared libcheck commit parsers
+
   { message = "^feat", group = "<!-- 0 -->🚀 Features" },
   { message = "^fix", group = "<!-- 1 -->🐛 Bug Fixes" },
   { message = "^doc", group = "<!-- 3 -->📚 Documentation" },
@@ -76,7 +83,6 @@ commit_parsers = [
   { message = "^\\(.*\\)$", skip = true },
   { message = "^chore\\(release\\): prepare for", skip = true },
   { message = "^chore\\(deps.*\\)", skip = true },
-  { message = "^deps:", skip = false, group = "<!-- 7 -->📦 Dependencies" },
   { message = "^chore\\(pr\\)", skip = true },
   { message = "^chore\\(pull\\)", skip = true },
   { message = "^chore\\(libcheck\\)", skip = true },
