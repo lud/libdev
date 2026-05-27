@@ -16,5 +16,10 @@
   dependabot: [
     schedule: "weekly",
     timezone: "Etc/UTC"
+  ],
+  cliff: [
+    commit_parsers: [
+      [message: "^deps:", skip: false, group: "<!-- 7 -->📦 Dependencies"]
+    ]
   ]
 ]
