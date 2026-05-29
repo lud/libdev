@@ -16,7 +16,7 @@ advisory at
 the **Security** tab of this repository and click **"Report a vulnerability"**.
 This opens a private channel visible only to you and the maintainers.
 
-We will do our best to acknowledge your report and to keep you informed while it
+I will do my best to acknowledge your report and to keep you informed while it
 is investigated. If the report is accepted, a fix will be released and a
 security advisory published through GitHub Security Advisories.
 
