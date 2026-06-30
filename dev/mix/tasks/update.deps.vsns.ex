@@ -4,7 +4,7 @@ defmodule Mix.Tasks.Update.Deps.Vsns do
 
   @impl true
   def run(_argv) do
-    deps_declarations = Mix.Project.get!().auto_updated_deps()
+    deps_declarations = Mix.Project.get!().meta_package_deps()
     deps = Enum.map(deps_declarations, fn {dep, _vsn, _} -> dep end)
 
     versions = min_versions(deps)
@@ -54,12 +54,12 @@ defmodule Mix.Tasks.Update.Deps.Vsns do
   defp replace_deps(mix_exs_ast, min_versions) do
     {new_ast, {found?, updates}} =
       Macro.postwalk(mix_exs_ast, {_found? = false, []}, fn
-        {def_p, meta1, [{:auto_updated_deps, meta2, _no_args}, [do: body]]},
+        {def_p, meta1, [{:meta_package_deps, meta2, _no_args}, [do: body]]},
         {false = _found?, updates}
         when def_p in [:def, :defp] ->
           {body, updates} = update_vsns(body, min_versions, updates)
           # force args to be nil to remove the parenthesis
-          fun_ast = {def_p, meta1, [{:auto_updated_deps, meta2, nil}, [do: body]]}
+          fun_ast = {def_p, meta1, [{:meta_package_deps, meta2, nil}, [do: body]]}
           {fun_ast, {_found? = true, updates}}
 
         other, acc ->

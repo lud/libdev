@@ -38,10 +38,10 @@ defmodule Libdev.MixProject do
   end
 
   defp deps do
-    auto_updated_deps() ++ self_deps()
+    meta_package_deps() ++ self_deps()
   end
 
-  def auto_updated_deps do
+  def meta_package_deps do
     [
       {:credo, ">= 1.7.19", runtime: false},
       {:dialyxir, ">= 1.4.7", runtime: false},
