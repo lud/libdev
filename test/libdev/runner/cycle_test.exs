@@ -30,6 +30,14 @@ defmodule Libdev.Runner.CycleTest do
       assert {:run, [:a, :b], _} = Cycle.plan(state, [:a, :b], %{})
     end
 
+    test "a dropped failing tool does not block completion on the next call" do
+      prior = finish_cycle([:a, :b, :c], %{a: :pass, b: :pass, c: :fail})
+      state = Cycle.new(prior)
+
+      assert {:run, [:a, :b], state} = Cycle.plan(state, [:a, :b], %{})
+      assert {:done, _} = Cycle.plan(state, [:a, :b], %{a: :pass, b: :pass})
+    end
+
     test "a brand-new tool runs alongside the rest when there are no prior failures" do
       prior = finish_cycle([:a, :b], %{a: :pass, b: :pass})
       state = Cycle.new(prior)

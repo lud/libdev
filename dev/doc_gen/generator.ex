@@ -1,5 +1,6 @@
 if Code.ensure_loaded?(Readmix.Generator) do
   defmodule Libdev.DocGen.Generator do
+    @moduledoc false
     use Readmix.Generator
 
     action :readme_deps, params: []

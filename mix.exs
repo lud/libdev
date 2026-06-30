@@ -9,7 +9,7 @@ defmodule Libdev.MixProject do
       app: :libdev,
       description: "A meta package to pull common development libraries.",
       version: @version,
-      elixir: "~> 1.17",
+      elixir: "~> 1.18",
       start_permanent: Mix.env() == :prod,
       source_url: @source_url,
       elixirc_paths: elixirc_paths(Mix.env()),
@@ -45,8 +45,6 @@ defmodule Libdev.MixProject do
     [
       {:credo, ">= 1.7.19", runtime: false},
       {:dialyxir, ">= 1.4.7", runtime: false},
-      {:doctor, ">= 0.23.0", runtime: false},
-      {:ex_check, ">= 0.16.0", runtime: false},
       {:ex_doc, ">= 0.40.3", runtime: false},
       {:mix_audit, ">= 2.1.5", runtime: false},
       {:sobelow, ">= 0.14.1", runtime: false}

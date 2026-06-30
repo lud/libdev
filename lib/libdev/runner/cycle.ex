@@ -1,5 +1,6 @@
 defmodule Libdev.Runner.Cycle do
-  def new() do
+  @moduledoc false
+  def new do
     %{}
   end
 
@@ -32,20 +33,20 @@ defmodule Libdev.Runner.Cycle do
         {:done, cycle}
 
       %{stale_fail: true} ->
-        {:run, with_statuses(cycle, ids, [:stale_fail, :unknown]), cycle}
+        {:run, ids_with_statuses(cycle, ids, [:stale_fail, :unknown]), cycle}
 
       %{stale_pass: true} ->
-        {:run, with_statuses(cycle, ids, [:stale_pass, :unknown]), cycle}
+        {:run, ids_with_statuses(cycle, ids, [:stale_pass, :unknown]), cycle}
 
       %{unknown: true} ->
-        {:run, with_statuses(cycle, ids, [:unknown]), cycle}
+        {:run, ids_with_statuses(cycle, ids, [:unknown]), cycle}
 
       _ ->
         {:done, cycle}
     end
   end
 
-  defp with_statuses(cycle, ids, statuses) do
+  defp ids_with_statuses(cycle, ids, statuses) do
     Enum.filter(ids, &(Map.fetch!(cycle, &1) in statuses))
   end
 
