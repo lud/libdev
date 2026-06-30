@@ -9,8 +9,6 @@ This package includes the following packages:
 
 * [credo](https://hex.pm/packages/credo)
 * [dialyxir](https://hex.pm/packages/dialyxir)
-* [doctor](https://hex.pm/packages/doctor)
-* [ex_check](https://hex.pm/packages/ex_check)
 * [ex_doc](https://hex.pm/packages/ex_doc)
 * [mix_audit](https://hex.pm/packages/mix_audit)
 * [sobelow](https://hex.pm/packages/sobelow)
