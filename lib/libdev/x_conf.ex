@@ -10,6 +10,7 @@ defmodule Libdev.XConf do
     end
   end
 
+  # sobelow_skip ["RCE.CodeModule"]
   def eval_config(elixir_code, path) do
     {result, _binding} = Code.eval_string(elixir_code, [], file: path)
     {:ok, result}

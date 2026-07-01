@@ -232,13 +232,18 @@ defmodule Libdev.Runner do
   end
 
   defp spawn_batch(batch, ctx) do
+    batch
+    |> Enum.map(&format_command_start/1)
+    |> Enum.intersperse("\n")
+    |> IO.ANSI.format()
+    |> IO.puts()
+
     Enum.map(batch, fn cstate ->
       %{cstate | port: spawn_port(cstate, ctx), started_at: now()}
     end)
   end
 
   defp spawn_port(cstate, ctx) do
-    IO.puts(format_command_start(cstate))
     Port.open({:spawn_executable, ctx.elixir_exe}, cstate.port_opts)
   end
 
@@ -247,10 +252,10 @@ defmodule Libdev.Runner do
   end
 
   defp receive_command(cstate) do
-    IO.puts(format_command_output_header(cstate))
+    IO.puts(IO.ANSI.format(format_command_output_header(cstate)))
     {output, exit_status, finished_at} = receive_port(cstate.port, [])
     state = %{cstate | output: output, exit_status: exit_status, finished_at: finished_at}
-    IO.puts(format_command_finished(state))
+    IO.puts(IO.ANSI.format(format_command_finished(state)))
     state
   end
 
@@ -279,12 +284,14 @@ defmodule Libdev.Runner do
         :error
       end
 
-    IO.puts([
+    [
       format_summary_header(ctx, color),
       "\n",
       Enum.map_intersperse(batch, ?\n, fn cstate -> format_command_summary(cstate) end),
       "\n\n"
-    ])
+    ]
+    |> IO.ANSI.format()
+    |> IO.puts()
 
     batch
   end
@@ -302,13 +309,14 @@ defmodule Libdev.Runner do
   end
 
   defp format_command_start(cstate) do
-    IO.ANSI.format([
+    [
       color(:neutral),
       log_prefix(),
       " starting ",
       :bright,
-      to_string(cstate.command)
-    ])
+      to_string(cstate.command),
+      :reset
+    ]
   end
 
   defp format_command_output_header(cstate) do
@@ -349,7 +357,7 @@ defmodule Libdev.Runner do
         :error
       end
 
-    IO.ANSI.format([
+    [
       "\n",
       color(color),
       log_prefix(),
@@ -361,41 +369,41 @@ defmodule Libdev.Runner do
       :bright,
       to_string(seconds),
       "s",
+      :reset,
       "\n"
-    ])
+    ]
   end
 
   defp format_command_summary(cstate) do
-    ansi_seq =
-      if success?(cstate) do
-        [
-          color(:success),
-          "  ✔ ",
-          :bright,
-          to_string(cstate.command),
-          :normal,
-          " finished in ",
-          :bright,
-          format_time(cstate)
-        ]
-      else
-        [
-          color(:error),
-          "  ✘ ",
-          :bright,
-          to_string(cstate.command),
-          :normal,
-          " finished in ",
-          :bright,
-          format_time(cstate),
-          :normal,
-          " with exit=",
-          :bright,
-          to_string(cstate.exit_status)
-        ]
-      end
-
-    IO.ANSI.format(ansi_seq)
+    if success?(cstate) do
+      [
+        color(:success),
+        "  ✔ ",
+        :bright,
+        to_string(cstate.command),
+        :normal,
+        " finished in ",
+        :bright,
+        format_time(cstate),
+        :reset
+      ]
+    else
+      [
+        color(:error),
+        "  ✘ ",
+        :bright,
+        to_string(cstate.command),
+        :normal,
+        " finished in ",
+        :bright,
+        format_time(cstate),
+        :normal,
+        " with exit=",
+        :bright,
+        to_string(cstate.exit_status),
+        :reset
+      ]
+    end
   end
 
   defp format_header(main_output, color) do
@@ -410,14 +418,13 @@ defmodule Libdev.Runner do
     pad_left = 0
     pad_right = max(0, cols - raw_text_len - pad_left)
 
-    out =
-      IO.ANSI.format([
-        background_color(color),
-        List.duplicate(?\s, pad_left),
-        main_output,
-        List.duplicate(?\s, pad_right),
-        :reset
-      ])
+    out = [
+      background_color(color),
+      List.duplicate(?\s, pad_left),
+      main_output,
+      List.duplicate(?\s, pad_right),
+      :reset
+    ]
 
     ["\n", out, "\n"]
   end

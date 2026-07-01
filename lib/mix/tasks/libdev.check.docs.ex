@@ -12,7 +12,8 @@ defmodule Mix.Tasks.Libdev.Check.Docs do
 
   The task compiles the project, inspects the documentation metadata of every
   module of the current application and reports the modules that have at least
-  one documentation problem.
+  one documentation problem. Each problem is reported with the source file and
+  line of the definition that misses its documentation.
 
   Modules with `@moduledoc false` are ignored entirely: their public functions
   do not count towards the coverage thresholds and are never checked. Functions
@@ -43,25 +44,28 @@ defmodule Mix.Tasks.Libdev.Check.Docs do
 
     report = Enum.sort_by(report, & &1.module)
 
-    # Always print the problems first, so that the threshold results stay at the
-    # bottom and remain visible even when the report is huge.
-    print_report(report)
-
     module_coverage = coverage(counts.module_ok, counts.module_count)
     function_coverage = coverage(counts.function_ok, counts.function_count)
 
     module_pass? = module_coverage >= min_module_coverage
     function_pass? = function_coverage >= min_function_coverage
 
-    IO.puts("")
-    print_threshold("Module coverage", module_coverage, min_module_coverage, module_pass?)
+    # The problems come first, so that the threshold results stay at the
+    # bottom and remain visible even when the report is huge.
+    lines =
+      report_lines(report) ++
+        [
+          "",
+          threshold_line("Module coverage", module_coverage, min_module_coverage, module_pass?),
+          threshold_line(
+            "Function coverage",
+            function_coverage,
+            min_function_coverage,
+            function_pass?
+          )
+        ]
 
-    print_threshold(
-      "Function coverage",
-      function_coverage,
-      min_function_coverage,
-      function_pass?
-    )
+    lines |> Enum.intersperse("\n") |> IO.ANSI.format() |> IO.puts()
 
     if !(module_pass? and function_pass?) do
       System.halt(1)
@@ -72,7 +76,11 @@ defmodule Mix.Tasks.Libdev.Check.Docs do
     app = Keyword.fetch!(Mix.Project.config(), :app)
     {:ok, modules} = :application.get_key(app, :modules)
 
-    accin = %{
+    Enum.flat_map_reduce(modules, new_counts(), &reduce_module/2)
+  end
+
+  defp new_counts do
+    %{
       module_count: 0,
       module_ok: 0,
       module_missing: 0,
@@ -80,8 +88,11 @@ defmodule Mix.Tasks.Libdev.Check.Docs do
       function_ok: 0,
       function_missing: 0
     }
+  end
 
-    Enum.flat_map_reduce(modules, accin, &reduce_module/2)
+  @doc false
+  def scan_module(module) do
+    reduce_module(module, new_counts())
   end
 
   defp reduce_module(module, acc) do
@@ -90,7 +101,9 @@ defmodule Mix.Tasks.Libdev.Check.Docs do
       {:docs_v1, _anno, _lang, _format, :hidden, _meta, _docs} ->
         {[], acc}
 
-      {:docs_v1, _anno, _lang, _format, moduledoc, meta, docs} ->
+      {:docs_v1, anno, _lang, _format, moduledoc, meta, docs} ->
+        source_path = source_path(meta)
+
         moduledoc_status =
           if moduledoc == :none do
             :missing
@@ -98,7 +111,7 @@ defmodule Mix.Tasks.Libdev.Check.Docs do
             :ok
           end
 
-        {functions, fun_counts} = missing_function_docs(docs, meta)
+        {functions, fun_counts} = missing_function_docs(docs, meta, source_path)
 
         functions = Enum.sort_by(functions, & &1.function)
 
@@ -109,8 +122,12 @@ defmodule Mix.Tasks.Libdev.Check.Docs do
 
         reports =
           case {moduledoc_status, functions} do
-            {:ok, []} -> []
-            _ -> [build_entry(module, moduledoc_status, functions)]
+            {:ok, []} ->
+              []
+
+            _ ->
+              location = entry_location(source_path, meta, anno)
+              [build_entry(module, moduledoc_status, functions, location)]
           end
 
         {reports, acc}
@@ -121,21 +138,28 @@ defmodule Mix.Tasks.Libdev.Check.Docs do
     end
   end
 
-  defp build_entry(module, moduledoc, missing_functions) do
-    %{module: module, moduledoc: moduledoc, functions: missing_functions}
+  defp build_entry(module, moduledoc, missing_functions, location) do
+    %{module: module, moduledoc: moduledoc, functions: missing_functions, location: location}
   end
 
-  defp missing_function_docs(docs, module_meta) do
+  defp missing_function_docs(docs, module_meta, source_path) do
     docs = filter_functions(docs, module_meta)
 
     accin = %{function_count: 0, function_ok: 0, function_missing: 0}
 
     Enum.flat_map_reduce(docs, accin, fn
-      {{kind, name, arity}, _anno, _signature, doc, _meta}, counts
+      {{kind, name, arity}, anno, _signature, doc, fun_meta}, counts
       when kind in [:function, :macro] ->
         case doc do
           :none ->
-            {[%{function: name, arity: arity, doc: :missing}], count_function(counts, :missing)}
+            entry = %{
+              function: name,
+              arity: arity,
+              doc: :missing,
+              location: entry_location(source_path, fun_meta, anno)
+            }
+
+            {[entry], count_function(counts, :missing)}
 
           _ ->
             {[], count_function(counts, :ok)}
@@ -144,6 +168,50 @@ defmodule Mix.Tasks.Libdev.Check.Docs do
       _other, counts ->
         {[], counts}
     end)
+  end
+
+  # The docs chunk gives two locations for an entry: the `:source_annos`
+  # metadata points at the `defmodule`/`def` itself while the entry anno points
+  # at the documentation attributes above it. Prefer the definition site.
+  defp entry_location(nil, _meta, _anno) do
+    nil
+  end
+
+  defp entry_location(source_path, meta, anno) do
+    source_anno_line =
+      case meta do
+        %{source_annos: [first | _]} -> anno_line(first)
+        _ -> nil
+      end
+
+    case source_anno_line || anno_line(anno) do
+      nil -> source_path
+      line -> "#{source_path}:#{line}"
+    end
+  end
+
+  defp anno_line(line) when is_integer(line) do
+    line
+  end
+
+  defp anno_line({line, _column}) when is_integer(line) do
+    line
+  end
+
+  defp anno_line(anno) when is_list(anno) do
+    anno_line(:proplists.get_value(:location, anno, nil))
+  end
+
+  defp anno_line(_other) do
+    nil
+  end
+
+  defp source_path(%{source_path: path}) do
+    path |> to_string() |> Path.relative_to_cwd()
+  end
+
+  defp source_path(_meta) do
+    nil
   end
 
   # Skip the callbacks of every behaviour the module implements: their
@@ -230,37 +298,61 @@ defmodule Mix.Tasks.Libdev.Check.Docs do
     ok / total * 100
   end
 
-  defp print_report([]) do
-    IO.puts([IO.ANSI.green(), "Documentation is complete", IO.ANSI.reset()])
+  defp report_lines([]) do
+    [[:green, "Documentation is complete", :reset]]
   end
 
-  defp print_report(report) do
-    IO.puts([IO.ANSI.red(), "Documentation coverage is below threshold", IO.ANSI.reset()])
-    Enum.each(report, &print_module_entry/1)
+  defp report_lines(report) do
+    header = [:red, "Documentation coverage is below threshold", :reset]
+
+    [header | Enum.flat_map(report, &module_entry_lines/1)]
   end
 
-  defp print_module_entry(entry) do
-    IO.puts("")
-    IO.puts([IO.ANSI.bright(), IO.ANSI.yellow(), inspect(entry.module), IO.ANSI.reset()])
+  defp module_entry_lines(entry) do
+    module_line = [:bright, :yellow, inspect(entry.module), :reset]
 
-    if entry.moduledoc == :missing do
-      IO.puts("  - missing @moduledoc")
-    end
-
-    Enum.each(entry.functions, fn fun ->
-      IO.puts("  - missing @doc for #{fun.function}/#{fun.arity}")
-    end)
-  end
-
-  defp print_threshold(label, coverage, min, pass?) do
-    color =
-      if pass? do
-        IO.ANSI.green()
+    moduledoc_lines =
+      if entry.moduledoc == :missing do
+        [["  - missing ", :bright, "@moduledoc", :reset, location_suffix(entry.location)]]
       else
-        IO.ANSI.red()
+        []
       end
 
-    IO.puts([
+    function_lines =
+      Enum.map(entry.functions, fn fun ->
+        [
+          "  - missing ",
+          :bright,
+          "@doc",
+          :reset,
+          " for ",
+          :yellow,
+          "#{fun.function}/#{fun.arity}",
+          :reset,
+          location_suffix(fun.location)
+        ]
+      end)
+
+    ["", module_line | moduledoc_lines ++ function_lines]
+  end
+
+  defp location_suffix(nil) do
+    []
+  end
+
+  defp location_suffix(location) do
+    [:faint, " (", location, ")", :reset]
+  end
+
+  defp threshold_line(label, coverage, min, pass?) do
+    color =
+      if pass? do
+        :green
+      else
+        :red
+      end
+
+    [
       color,
       String.pad_trailing(label, 20),
       " ",
@@ -268,8 +360,8 @@ defmodule Mix.Tasks.Libdev.Check.Docs do
       " (min ",
       format_pct(min),
       ")",
-      IO.ANSI.reset()
-    ])
+      :reset
+    ]
   end
 
   defp format_pct(value) do
