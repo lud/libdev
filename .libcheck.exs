@@ -1,7 +1,4 @@
 [
-  github_workflows: [
-    elixir_checks: false
-  ],
   dependencies: [
     allow_prod_env: [
       :credo,
