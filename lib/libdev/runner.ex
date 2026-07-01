@@ -36,13 +36,14 @@ defmodule Libdev.Runner do
   def run(opts) do
     pre_checks = Keyword.fetch!(opts, :pre_checks)
     checks = Keyword.fetch!(opts, :checks)
+    all? = Keyword.get(opts, :all, false)
 
     ctx = %{elixir_exe: :os.find_executable(~c"elixir"), started_at: now(), finished_at: nil}
     compile_batch = run_batch(prepare_batch(pre_checks), ctx)
 
     last_batch =
       if all_success?(compile_batch) do
-        run_staged(checks, ctx)
+        run_staged(checks, ctx, all?)
       else
         compile_batch
       end
@@ -103,11 +104,17 @@ defmodule Libdev.Runner do
     end)
   end
 
-  defp run_staged(checks, ctx) do
+  defp run_staged(checks, ctx, all?) do
     batch_all = prepare_batch(checks)
     all_ids = Enum.map(batch_all, & &1.id)
 
-    manifest = load_manifest()
+    manifest =
+      if all? do
+        %{}
+      else
+        load_manifest()
+      end
+
     cycle = Cycle.new(manifest)
 
     # Stage 1 is potentially partial: when the manifest holds prior failures, the

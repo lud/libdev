@@ -60,6 +60,12 @@ defmodule Mix.Tasks.Libdev.Check do
 
   There is no all-green result that covered only a subset of the checks.
 
+  Pass `--all` to ignore the remembered result and run every check from scratch.
+
+  ```console
+  mix libdev.check --all
+  ```
+
   ## Configuration
 
   Configuration is read from a `.libdev.exs` file located at the **root of your
@@ -127,7 +133,9 @@ defmodule Mix.Tasks.Libdev.Check do
   """
 
   @impl Mix.Task
-  def run(_argv) do
+  def run(argv) do
+    {opts, _rest} = OptionParser.parse!(argv, strict: [all: :boolean])
+
     conf = load_config!()
 
     checks =
@@ -138,7 +146,7 @@ defmodule Mix.Tasks.Libdev.Check do
 
     case checks do
       [] -> :ok
-      _ -> Libdev.Runner.run(pre_checks: @pre_checks, checks: checks)
+      _ -> Libdev.Runner.run(pre_checks: @pre_checks, checks: checks, all: opts[:all] || false)
     end
   end
 
