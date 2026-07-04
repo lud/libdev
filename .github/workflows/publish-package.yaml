@@ -1,9 +1,10 @@
 name: Publish hex.pm Package
 
 on:
-  push:
-    branches:
-      - main
+  schedule:
+    # Weekly release batching the dependency updates merged during the week.
+    - cron: "0 6 * * 0"
+  workflow_dispatch:
 
 env:
   MIX_ENV: dev

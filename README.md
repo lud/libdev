@@ -30,7 +30,7 @@ end
 
 ## Dependabot
 
-This meta package relies on dependabot updates and is published to [Hex](https://hex.pm/) on a weekly basis when its dependencies are updated.
+This meta package relies on daily dependabot updates and is published to [Hex](https://hex.pm/) weekly, on Sundays, when its dependencies have been updated during the week.
 
 You should also setup
 [Dependabot](https://docs.github.com/en/code-security/getting-started/dependabot-quickstart-guide)
