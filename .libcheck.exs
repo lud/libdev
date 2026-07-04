@@ -11,8 +11,9 @@
     ]
   ],
   dependabot: [
-    schedule: "weekly",
-    timezone: "Etc/UTC"
+    schedule: "daily",
+    timezone: "Etc/UTC",
+    max_pull_requests: 2
   ],
   cliff: [
     commit_parsers: [
