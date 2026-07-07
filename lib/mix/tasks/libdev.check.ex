@@ -15,7 +15,7 @@ defmodule Mix.Tasks.Libdev.Check do
     test: [argv: ~w(--warnings-as-errors)],
     docs: [],
     docs_check: [mix_task: "libdev.check.docs"],
-    mix_audit: [mix_task: "deps.audit"],
+    hex_audit: [mix_task: "hex.audit"],
     sobelow: [argv: ~w(--skip)],
     dialyzer: []
   ]
@@ -99,7 +99,7 @@ defmodule Mix.Tasks.Libdev.Check do
     * a keyword list to override the default's options. Supported options are:
 
       * `:mix_task` - a string naming the Mix task to run for this check, when
-        it differs from the check name (e.g. `"deps.audit"` for the `:mix_audit`
+        it differs from the check name (e.g. `"hex.audit"` for the `:hex_audit`
         check).
       * `:argv` - a list of strings appended to the underlying command's
         arguments (e.g. `["--check-formatted"]`).

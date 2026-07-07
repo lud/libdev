@@ -10,7 +10,6 @@ This package includes the following packages:
 * [credo](https://hex.pm/packages/credo)
 * [dialyxir](https://hex.pm/packages/dialyxir)
 * [ex_doc](https://hex.pm/packages/ex_doc)
-* [mix_audit](https://hex.pm/packages/mix_audit)
 * [sobelow](https://hex.pm/packages/sobelow)
 
 <!-- rdmx /libdev:readme_deps -->
