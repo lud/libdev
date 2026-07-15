@@ -94,7 +94,7 @@ defmodule Libdev.Runner do
   defp manifest_path do
     cwd = File.cwd!()
     base = Path.basename(cwd)
-    Path.join(System.tmp_dir!(), "libdev-#{unique_id(base, cwd)}.manifest.json")
+    Path.join(System.tmp_dir!(), "libdev-#{unique_id(base, cwd, "-")}.manifest.json")
   end
 
   defp cast_manifest(map) when is_map(map) do
@@ -221,14 +221,14 @@ defmodule Libdev.Runner do
     end
   end
 
-  defp unique_id(prefix, data) do
+  defp unique_id(prefix, data, separator \\ "__") do
     digest =
       data
       |> :erlang.term_to_binary([:deterministic])
       |> then(&:crypto.hash(:sha, &1))
       |> Base.encode32(padding: false, case: :lower)
 
-    String.pad_trailing("#{prefix}-", 32, digest)
+    String.pad_trailing("#{prefix}#{separator}", 32, digest)
   end
 
   defp spawn_batch(batch, ctx) do
