@@ -58,7 +58,7 @@ defmodule Mix.Tasks.Libdev.Check.DocsTest do
 
     {:ok, modules, _warnings} =
       try do
-        Kernel.ParallelCompiler.compile_to_path([source_path], dir)
+        Kernel.ParallelCompiler.compile_to_path([source_path], dir, return_diagnostics: true)
       after
         Code.put_compiler_option(:docs, previous_docs)
       end
