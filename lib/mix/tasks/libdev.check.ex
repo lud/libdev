@@ -10,11 +10,18 @@ defmodule Mix.Tasks.Libdev.Check do
   ]
 
   @default_checks [
+    warnings: [mix_task: "compile", argv: ~w(--warnings-as-errors)],
+    warnings_test: [
+      mix_task: "compile",
+      argv: ~w(--warnings-as-errors),
+      env: %{"MIX_ENV" => "test"}
+    ],
     credo: [argv: ~w(--all --strict)],
     format: [argv: ~w(--check-formatted)],
     test: [argv: ~w(--warnings-as-errors)],
     docs: [],
     docs_check: [mix_task: "libdev.check.docs"],
+    unused_deps: [mix_task: "deps.unlock", argv: ~w(--check-unused)],
     hex_audit: [mix_task: "hex.audit"],
     sobelow: [argv: ~w(--skip)],
     dialyzer: []
