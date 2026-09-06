@@ -45,7 +45,7 @@ defmodule Libdev.MixProject do
     [
       {:credo, ">= 1.7.19", runtime: false},
       {:dialyxir, ">= 1.4.7", runtime: false},
-      {:ex_doc, ">= 0.40.3", runtime: false},
+      {:ex_doc, ">= 0.40.4", runtime: false},
       {:sobelow, ">= 0.15.0", runtime: false}
     ]
   end
