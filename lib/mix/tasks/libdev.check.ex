@@ -58,20 +58,38 @@ defmodule Mix.Tasks.Libdev.Check do
   ## Re-running failures
 
   To keep feedback fast, the task remembers the result of the previous run and
-  re-runs only the checks that failed. Stale passing checks are skipped while
+  re-runs only the checks that failed. Stale passing checks are held back while
   failures remain.
 
   This is only an optimization: as soon as the previously failing checks pass
   again, the task runs the remaining checks before reporting. An all-green
   result therefore always means every check ran and passed in this run.
 
-  There is no all-green result that covered only a subset of the checks.
+  There is no all-green result from `mix libdev.check` that covered only a
+  subset of the checks.
 
   Pass `--all` to ignore the remembered result and run every check from scratch.
 
   ```console
   mix libdev.check --all
   ```
+
+  ## Skipping checks
+
+  Pass `--skip` with a check name to leave that check out of the run. Repeat the
+  option to skip several checks. Check names are the keys of the `:checks`
+  configuration described below. An unknown name stops the task with the list
+  of available checks. The compilation pre-checks always run.
+
+  ```console
+  mix libdev.check --skip credo --skip dialyzer
+  ```
+
+  The summary lists the skipped checks in yellow. With `--skip`, an all-green
+  result means every other check ran and passed in this run.
+
+  Skipping a check forgets its previous result. On the next run where it is no
+  longer skipped, it runs like a newly added check.
 
   ## Configuration
 
@@ -141,19 +159,61 @@ defmodule Mix.Tasks.Libdev.Check do
 
   @impl Mix.Task
   def run(argv) do
-    {opts, _rest} = OptionParser.parse!(argv, strict: [all: :boolean])
+    {opts, _rest} = OptionParser.parse!(argv, strict: [all: :boolean, skip: :keep])
 
     conf = load_config!()
 
-    checks =
+    merged_checks =
       case XConf.fetch(conf, :checks, {:keyword, &validate_check/1}, []) do
-        {:ok, raw_user_checks} -> build_user_checks(raw_user_checks)
+        {:ok, raw_user_checks} -> merge_checks(@default_checks, raw_user_checks)
+        {:error, errmsg} -> abort(errmsg)
+      end
+
+    checks = build_user_checks(merged_checks)
+
+    skip =
+      case parse_skip(Keyword.get_values(opts, :skip), merged_checks) do
+        {:ok, skip} -> skip
         {:error, errmsg} -> abort(errmsg)
       end
 
     case checks do
-      [] -> :ok
-      _ -> Libdev.Runner.run(pre_checks: @pre_checks, checks: checks, all: opts[:all] || false)
+      [] ->
+        :ok
+
+      _ ->
+        Libdev.Runner.run(
+          pre_checks: @pre_checks,
+          checks: checks,
+          skip: skip,
+          all: opts[:all] || false
+        )
+    end
+  end
+
+  @doc false
+  def parse_skip(raw_names, merged_checks) do
+    known = Map.new(merged_checks, fn {key, _} -> {Atom.to_string(key), key} end)
+
+    raw_names
+    |> Enum.reduce_while({:ok, []}, fn name, {:ok, acc} ->
+      case Map.fetch(known, name) do
+        {:ok, key} ->
+          {:cont, {:ok, [key | acc]}}
+
+        :error ->
+          {:halt,
+           {:error,
+            "unknown check #{inspect(name)} given to --skip, known checks: " <>
+              Enum.map_join(merged_checks, ", ", fn {key, _} -> Atom.to_string(key) end)}}
+      end
+    end)
+    |> case do
+      {:ok, keys} ->
+        {:ok, keys |> Enum.reverse() |> Enum.uniq() |> Enum.reject(&(merged_checks[&1] == false))}
+
+      {:error, _} = err ->
+        err
     end
   end
 
@@ -173,9 +233,7 @@ defmodule Mix.Tasks.Libdev.Check do
     System.halt(1)
   end
 
-  defp build_user_checks(raw_user_checks) do
-    merged = merge_checks(@default_checks, raw_user_checks)
-
+  defp build_user_checks(merged) do
     Enum.flat_map(merged, fn
       {_, false} -> []
       {key, true} -> [{key, []}]

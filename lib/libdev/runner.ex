@@ -37,18 +37,19 @@ defmodule Libdev.Runner do
     pre_checks = Keyword.fetch!(opts, :pre_checks)
     checks = Keyword.fetch!(opts, :checks)
     all? = Keyword.get(opts, :all, false)
+    skip = Keyword.get(opts, :skip, [])
 
     ctx = %{elixir_exe: :os.find_executable(~c"elixir"), started_at: now(), finished_at: nil}
     compile_batch = run_batch(prepare_batch(pre_checks), ctx)
 
     last_batch =
       if all_success?(compile_batch) do
-        run_staged(checks, ctx, all?)
+        run_staged(checks, skip, ctx, all?)
       else
         compile_batch
       end
 
-    _ = summarize_batch(last_batch, %{ctx | finished_at: now()})
+    _ = summarize_batch(last_batch, skip, %{ctx | finished_at: now()})
 
     if not all_success?(last_batch) do
       System.halt(1)
@@ -104,9 +105,16 @@ defmodule Libdev.Runner do
     end)
   end
 
-  defp run_staged(checks, ctx, all?) do
+  defp run_staged(checks, skip, ctx, all?) do
     batch_all = prepare_batch(checks)
     all_ids = Enum.map(batch_all, & &1.id)
+
+    skipped_ids =
+      for %{command: command, id: id} <- batch_all, command in skip do
+        id
+      end
+
+    active_ids = all_ids -- skipped_ids
 
     manifest =
       if all? do
@@ -116,15 +124,25 @@ defmodule Libdev.Runner do
       end
 
     cycle = Cycle.new(manifest)
+    manifest = update_manifest(Map.drop(manifest, skipped_ids), %{}, all_ids)
 
+    case Cycle.plan(cycle, active_ids) do
+      {:done, _cycle} ->
+        []
+
+      {:run, ids_stage_1, cycle} ->
+        run_cycle(batch_all, active_ids, all_ids, ids_stage_1, cycle, manifest, ctx)
+    end
+  end
+
+  defp run_cycle(batch_all, active_ids, all_ids, ids_stage_1, cycle, manifest, ctx) do
     # Stage 1 is potentially partial: when the manifest holds prior failures, the
     # cycle only re-runs those (plus brand-new checks) and leaves the stale passes
     # for stage 2.
-    {:run, ids_stage_1, cycle} = Cycle.plan(cycle, all_ids)
     {batch_stage_1, states_stage_1} = run_stage(batch_all, ids_stage_1, ctx)
     manifest = update_manifest(manifest, states_stage_1, all_ids)
 
-    case Cycle.plan(cycle, all_ids, states_stage_1) do
+    case Cycle.plan(cycle, active_ids, states_stage_1) do
       # Stage 1 was the whole picture (all checks ran, or a re-run failure killed
       # the cycle). Stop here, success or failure.
       {:done, _cycle} ->
@@ -134,7 +152,7 @@ defmodule Libdev.Runner do
       # verifying. Stage 2 runs them and always settles to :done.
       {:run, ids_stage_2, cycle} ->
         {batch_stage_2, states_stage_2} = run_stage(batch_all, ids_stage_2, ctx)
-        {:done, _cycle} = Cycle.plan(cycle, all_ids, states_stage_2)
+        {:done, _cycle} = Cycle.plan(cycle, active_ids, states_stage_2)
         _manifest = update_manifest(manifest, states_stage_2, all_ids)
         batch_stage_1 ++ batch_stage_2
     end
@@ -274,7 +292,7 @@ defmodule Libdev.Runner do
     end
   end
 
-  defp summarize_batch(batch, ctx) do
+  defp summarize_batch(batch, skip, ctx) do
     success? = all_success?(batch)
 
     color =
@@ -288,6 +306,7 @@ defmodule Libdev.Runner do
       format_summary_header(ctx, color),
       "\n",
       Enum.map_intersperse(batch, ?\n, fn cstate -> format_command_summary(cstate) end),
+      Enum.map(skip, &["\n", format_skip_summary(&1)]),
       "\n\n"
     ]
     |> IO.ANSI.format()
@@ -406,6 +425,10 @@ defmodule Libdev.Runner do
     end
   end
 
+  defp format_skip_summary(command) do
+    [color(:warning), "  - ", :bright, to_string(command), :normal, " skipped", :reset]
+  end
+
   defp format_header(main_output, color) do
     raw_text_len = raw_len(main_output)
 
@@ -456,6 +479,7 @@ defmodule Libdev.Runner do
       :neutral -> :light_blue
       :success -> :green
       :error -> :red
+      :warning -> :yellow
     end
   end
 
